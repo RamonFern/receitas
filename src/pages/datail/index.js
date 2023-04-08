@@ -1,15 +1,17 @@
-import { StyleSheet, Text, View, Pressable, ScrollView, Image } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ScrollView, Image, Modal } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useState } from 'react';
 
 import { Entypo, AntDesign, Feather } from '@expo/vector-icons';
 
+import { VideoView } from '../../components/video';
 import { Ingredients } from '../../components/ingredients';
 import { Instructions } from '../../components/instructions';
 
 export function Datail() {
   const route = useRoute();
   const navigation = useNavigation();
+  const [ showVideo, setShowVideo ] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -25,10 +27,14 @@ export function Datail() {
       )
     })
   }, [navigation, route.params?.data])
+
+  function handlerOpenVideo() {
+    setShowVideo(true);
+  }
   
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 14 }} style={styles.container} showsVerticalScrollIndicator={false}>
-      <Pressable>
+      <Pressable onPress={handlerOpenVideo}>
         <View style={styles.playIcon}>
           <AntDesign name="playcircleo" size={54} color="#FAFAFA" />
         </View>
@@ -62,8 +68,16 @@ export function Datail() {
       </View>
 
       {route.params?.data.instructions.map((item, index) => (
-        <Instructions key={item.id} index={index} />
+        <Instructions key={item.id} data={item} index={index} />
       ))}
+
+      <Modal visible={showVideo} animationType='slide'>
+        <VideoView
+          handleClose={ () => setShowVideo(false) }
+          videoUrl={route.params?.data.video}
+        />
+      </Modal>
+
 
     </ScrollView>
   );
