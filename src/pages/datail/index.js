@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Pressable, ScrollView, Image, Modal } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ScrollView, Image, Modal, Share } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useLayoutEffect, useState } from 'react';
 
@@ -7,29 +7,70 @@ import { Entypo, AntDesign, Feather } from '@expo/vector-icons';
 import { VideoView } from '../../components/video';
 import { Ingredients } from '../../components/ingredients';
 import { Instructions } from '../../components/instructions';
+import { isFavorite, saveFavorites, removeFavorites } from '../../utils/storage';
 
 export function Datail() {
   const route = useRoute();
   const navigation = useNavigation();
   const [ showVideo, setShowVideo ] = useState(false);
+  const [ favorite, setFavorite ] = useState(false);
 
   useLayoutEffect(() => {
+    async function getStatusFavorites() {
+      const receiveFavorite = await isFavorite(route.params?.data)
+      setFavorite(receiveFavorite);
+    }
+
+    getStatusFavorites();
+
+
     navigation.setOptions({
       title: route.params?.data ? route.params?.data.name : "Detalhes da receita",
       headerRight: () => (
-        <Pressable onPress={ () => console.log("Clicou no coração..")}>
-          <Entypo
-            name="heart"
-            size={28}
-            color="#FF4141"
-          />
+        <Pressable onPress={ () => hadleFavoriteReceipe(route.params?.data)}>
+          {
+            favorite ? (
+            <Entypo
+              name="heart"
+              size={28}
+              color="#FF4141"
+            />) : (
+            <Entypo
+              name="heart-outlined"
+              size={28}
+              color="#FF4141"
+            />
+            )
+          }
         </Pressable>
       )
     })
-  }, [navigation, route.params?.data])
+  }, [navigation, route.params?.data, favorite])
+
+
+  async function hadleFavoriteReceipe(receipe) {
+    if(favorite) {
+      await removeFavorites(receipe.id)
+      setFavorite(false);
+    } else {
+      await saveFavorites("@appreceitas", receipe)
+      setFavorite(true);
+    }
+  }
 
   function handlerOpenVideo() {
     setShowVideo(true);
+  }
+
+  async function shareReceipe() {
+    try {
+      await Share.share({
+        url: "https://sujeitoprogramador.com",
+        message: `Receita: ${route.params?.data.name}\nIngredientes: ${route.params?.data.total_ingredients}\nVi no app receita fácil`
+      })
+    } catch(error) {
+      console.log(error);
+    }
   }
   
   return (
@@ -49,7 +90,7 @@ export function Datail() {
           <Text style={styles.title}>{route.params?.data.name}</Text>
           <Text style={styles.ingredientsText}>ingredientes ({route.params?.data.total_ingredients})</Text>
         </View>
-        <Pressable>
+        <Pressable onPress={shareReceipe}>
           <Feather name='share-2' size={24} color="#121212" />
         </Pressable>
       </View>
